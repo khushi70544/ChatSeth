@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Chat Seth Console — Merchant AI Dashboard</title>
+<style>
+  :root{--ink:#0e1b14;--muted:#5f7268;--line:#dfe8e2;--bg:#f6f9f6;--white:#fff;--green:#0f9d58;--green-deep:#0a6b3d;--mint:#e7f6ee;--font:'Segoe UI',system-ui,sans-serif}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--font);background:var(--bg);color:var(--ink);line-height:1.5}
+  .top{background:var(--white);border-bottom:1px solid var(--line);padding:14px 5%;display:flex;justify-content:space-between;align-items:center}
+  .brand{font-weight:800;font-size:1.15rem}.brand span{color:var(--green-deep)}
+  .badge{font-size:.72rem;background:var(--mint);color:var(--green-deep);padding:4px 10px;border-radius:999px;font-weight:700}
+  .wrap{width:min(1100px,92%);margin:24px auto;display:grid;gap:20px}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media(max-width:720px){.stats{grid-template-columns:1fr}}
+  .card{background:var(--white);border:1px solid var(--line);border-radius:16px;padding:18px}
+  .stat-val{font-size:1.65rem;font-weight:800;color:var(--green-deep);margin:4px 0}
+  .stat-lbl{font-size:.82rem;color:var(--muted);font-weight:600}
+  .grid2{display:grid;grid-template-columns:1.15fr .85fr;gap:20px}
+  @media(max-width:860px){.grid2{grid-template-columns:1fr}}
+  .row{display:grid;grid-template-columns:1.4fr .8fr auto;gap:10px;margin:14px 0}
+  @media(max-width:520px){.row{grid-template-columns:1fr}}
+  input{padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:.9rem;width:100%}
+  .btn{background:var(--green);color:#fff;border:none;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer}
+  .btn-sm{padding:5px 9px;font-size:.75rem;background:#fee2e2;color:#b91c1c;border-radius:7px;border:none;cursor:pointer}
+  table{width:100%;border-collapse:collapse;font-size:.86rem}
+  th,td{text-align:left;padding:9px 6px;border-bottom:1px solid var(--line)}
+  .chat-box{background:#e9e4dc;border-radius:14px;padding:12px;height:250px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin:12px 0}
+  .msg{max-width:82%;padding:8px 12px;border-radius:12px;font-size:.84rem}
+  .u{align-self:flex-start;background:#fff}.b{align-self:flex-end;background:#d9fdd3}
+  .chat-in{display:flex;gap:8px}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="brand">Chat <span>Seth</span> <span class="badge">Merchant Console</span></div>
+  <a href="index.html" style="font-size:.86rem;font-weight:700;color:var(--green-deep)">← Back to Website</a>
+</div>
+<div class="wrap">
+  <div class="stats">
+    <div class="card"><div class="stat-lbl">Indexed Store SKUs</div><div class="stat-val" id="skuCount">4</div><div class="stat-lbl">Synced with WhatsApp AI</div></div>
+    <div class="card"><div class="stat-lbl">Avg. Response Latency</div><div class="stat-val">1.8s</div><div class="stat-lbl">Hindi, Hinglish & English</div></div>
+    <div class="card"><div class="stat-lbl">Bot Engine Status</div><div class="stat-val">Online</div><div class="stat-lbl">24×7 Automated Capture</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h3>Store Product Catalogue</h3>
+      <div class="row">
+        <input id="pName" placeholder="Product name (e.g. Basmati Rice 1kg)" />
+        <input id="pPrice" type="number" placeholder="Price (₹)" />
+        <button class="btn" onclick="addSku()">+ Add</button>
+      </div>
+      <table><thead><tr><th>Product</th><th>Price</th><th>Status</th><th></th></tr></thead><tbody id="skuTable"></tbody></table>
+    </div>
+    <div class="card">
+      <h3>Live AI Sandbox (Test Your Bot)</h3>
+      <div class="chat-box" id="chatBox"><div class="msg b">Namaste! Welcome to Sharma General Store. Ask me about any item price or delivery!</div></div>
+      <div class="chat-in"><input id="qInput" placeholder="e.g. Basmati rice ka rate kya hai?" onkeydown="if(event.key==='Enter')askBot()" /><button class="btn" onclick="askBot()">Send</button></div>
+    </div>
+  </div>
+</div>
+<script>
+  let skus = JSON.parse(localStorage.getItem('cs_skus')) || [
+    { name: 'India Gate Basmati Rice 1kg', price: 120 },
+    { name: 'India Gate Basmati Rice 5kg', price: 560 },
+    { name: 'Aashirvaad Atta 10kg', price: 430 },
+    { name: 'Fortune Mustard Oil 1L', price: 145 }
+  ];
+  function renderSkus() {
+    localStorage.setItem('cs_skus', JSON.stringify(skus));
+    document.getElementById('skuCount').textContent = skus.length;
+    document.getElementById('skuTable').innerHTML = skus.map((s, i) => `<tr><td><b>${s.name}</b></td><td>₹${s.price}</td><td><span class="badge">In Stock</span></td><td><button class="btn-sm" onclick="delSku(${i})">Remove</button></td></tr>`).join('');
+  }
+  function addSku() {
+    const n = document.getElementById('pName').value.trim(), p = document.getElementById('pPrice').value.trim();
+    if (!n || !p) return;
+    skus.unshift({ name: n, price: Number(p) });
+    document.getElementById('pName').value = ''; document.getElementById('pPrice').value = '';
+    renderSkus();
+  }
+  function delSku(i) { skus.splice(i, 1); renderSkus(); }
+  function askBot() {
+    const inp = document.getElementById('qInput'), q = inp.value.trim();
+    if (!q) return;
+    const box = document.getElementById('chatBox');
+    box.innerHTML += `<div class="msg u">${q}</div>`; inp.value = '';
+    const ql = q.toLowerCase();
+    const match = skus.find(s => s.name.toLowerCase().split(' ').some(w => w.length > 2 && ql.includes(w)));
+    const reply = match ? `Ji haan! <b>${match.name}</b> available hai at <b>₹${match.price}</b>. Order confirm karne ke liye naam aur address bhejein.` : `Hamare store me abhi ${skus.slice(0,2).map(s=>s.name+' (₹'+s.price+')').join(', ')} available hain. Kisi specific item ka naam batayein?`;
+    setTimeout(() => { box.innerHTML += `<div class="msg b">${reply}</div>`; box.scrollTop = box.scrollHeight; }, 300);
+  }
+  renderSkus();
+</script>
+</body>
+</html>
+  
